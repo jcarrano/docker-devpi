@@ -1,36 +1,37 @@
-#!/bin/bash
+#!/bin/sh
 
-function defaults {
-    : ${DEVPI_SERVERDIR="/data/server"}
-    : ${DEVPI_CLIENTDIR="/data/client"}
+export DEVPI_SERVERDIR="/data/server"
+export DEVPI_CLIENTDIR="/data/client"
 
-    echo "DEVPI_SERVERDIR is ${DEVPI_SERVERDIR}"
-    echo "DEVPI_CLIENTDIR is ${DEVPI_CLIENTDIR}"
-
-    export DEVPI_SERVERDIR DEVPI_CLIENTDIR
-}
-
-function initialise_devpi {
+initialise_devpi() {
     echo "[RUN]: Initialise devpi-server"
-    devpi-server --restrict-modify root --start --host 127.0.0.1 --port 3141
-    devpi-server --status
-    devpi use http://localhost:3141
-    devpi login root --password=''
-    devpi user -m root password="${DEVPI_PASSWORD}"
-    devpi index -y -c public pypi_whitelist='*'
-    devpi-server --stop
-    devpi-server --status
+
+    if [ x"${DEVPI_PASSWORD}" = x ] ; then
+        echo "[RUN]: Please choose a password. Exiting."
+        return 1
+    fi
+
+    echo "${DEVPI_PASSWORD}
+${DEVPI_PASSWORD}" | \
+     devpi-server --restrict-modify root \
+                 --init --passwd root
 }
 
-defaults
+die() {
+   echo "[RUN] Unrecoverable error."
+   exit 1
+}
+
+echo "DEVPI_SERVERDIR is ${DEVPI_SERVERDIR}"
+echo "DEVPI_CLIENTDIR is ${DEVPI_CLIENTDIR}"
 
 if [ "$1" = 'devpi' ]; then
     if [ ! -f  $DEVPI_SERVERDIR/.serverversion ]; then
-        initialise_devpi
+        initialise_devpi || die
     fi
 
     echo "[RUN]: Launching devpi-server"
-    exec devpi-server --restrict-modify root --host 0.0.0.0 --port 3141
+    exec devpi-server --restrict-modify root --host 0.0.0.0 --port 3141 --debug
 fi
 
 echo "[RUN]: Builtin command not provided [devpi]"

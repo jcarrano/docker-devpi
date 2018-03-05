@@ -1,12 +1,18 @@
 version: '2'
 services:
-
   devpi:
-      image: muccg/devpi:latest
     volumes:
-      - ./data:/data
+      - /srv/docker/devpi:/data
     ports:
       - 3141:3141
     environment:
-      - DEVPI_PASSWORD=
+      - DEVPI_PASSWORD=secret-stuff
     restart: always
+    env_file:
+      - .env
+    build:
+      context: ./
+      args:
+        ARG_DEVPI_SERVER_VERSION: ${DOCKER_DEVPI_SERVER_VERSION}
+        ARG_DEVPI_WEB_VERSION: ${DOCKER_DEVPI_WEB_VERSION}
+        ARG_DEVPI_CLIENT_VERSION: ${DOCKER_DEVPI_CLIENT_VERSION}
